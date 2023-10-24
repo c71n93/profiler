@@ -13,7 +13,49 @@ namespace {
 
         bool isFuncLogger(StringRef name) {
             return name == "binOptLogger" || name == "callLogger" ||
-                   name == "funcStartLogger" || name == "funcEndLogger";
+                   name == "funcStartLogger" || name == "funcEndLogger" ||
+                   name == "operationLogger";
+        }
+
+        void insertFuncStartLogger(Function &F, IRBuilder<> &builder) {
+            // Prepare funcStartLogger function
+            ArrayRef<Type *> funcStartLoggerParamTypes = {
+                    builder.getInt8Ty()->getPointerTo()
+            };
+            FunctionType *funcStartLoggerFuncType =
+                    FunctionType::get(Type::getVoidTy(builder.getContext()), funcStartLoggerParamTypes, false);
+            FunctionCallee funcStartLoggerFunc = F.getParent()->getOrInsertFunction(
+                    "funcStartLogger", funcStartLoggerFuncType);
+
+            // Insert a call of funcStartLogger function in the function begin
+            BasicBlock &entryBB = F.getEntryBlock();
+            builder.SetInsertPoint(&entryBB.front());
+            Value *funcName = builder.CreateGlobalStringPtr(F.getName());
+            Value *args[] = {funcName};
+            builder.CreateCall(funcStartLoggerFunc, args);
+        }
+
+        void insertOperationsLogger(Function &F, IRBuilder<> &builder) {
+            ArrayRef<Type *> operationParamLoggerTypes = {
+                    builder.getInt8Ty()->getPointerTo()
+            };
+            FunctionType *operationParamLoggerType =
+                    FunctionType::get(Type::getVoidTy(builder.getContext()), operationParamLoggerTypes, false);
+            FunctionCallee operationParamLoggerFunc = F.getParent()->getOrInsertFunction(
+                    "operationLogger", operationParamLoggerType);
+
+            for (auto &B : F) {
+                for (auto &I : B) {
+                    if (auto *phi = dyn_cast<PHINode>(&I)) {
+                        continue;
+                    }
+                    builder.SetInsertPoint(&I);
+                    Value *instrName =
+                            builder.CreateGlobalStringPtr(I.getOpcodeName());
+                    Value *args[] = {instrName};
+                    builder.CreateCall(operationParamLoggerFunc, args);
+                }
+            }
         }
 
         virtual bool runOnFunction(Function &F) {
@@ -23,22 +65,9 @@ namespace {
             // Prepare builder for IR modification
             LLVMContext &Ctx = F.getContext();
             IRBuilder<> builder(Ctx);
-            Type *retType = Type::getVoidTy(Ctx);
 
-            // Prepare funcStartLogger function
-            ArrayRef<Type *> funcStartParamTypes = {
-                    builder.getInt8Ty()->getPointerTo()};
-            FunctionType *funcStartLogFuncType =
-                    FunctionType::get(retType, funcStartParamTypes, false);
-            FunctionCallee funcStartLogFunc = F.getParent()->getOrInsertFunction(
-                    "funcStartLogger", funcStartLogFuncType);
-
-            // Insert a call of funcStartLogger function in the function begin
-            BasicBlock &entryBB = F.getEntryBlock();
-            builder.SetInsertPoint(&entryBB.front());
-            Value *funcName = builder.CreateGlobalStringPtr(F.getName());
-            Value *args[] = {funcName};
-            builder.CreateCall(funcStartLogFunc, args);
+            insertFuncStartLogger(F, builder);
+            insertOperationsLogger(F, builder);
 
             return false;
         }

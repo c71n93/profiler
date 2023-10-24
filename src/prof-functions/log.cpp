@@ -4,6 +4,10 @@ extern "C" void funcStartLogger(char* funcName) {
     printf("[F_START] '%s'\n", funcName);
 }
 
+extern "C" void operationLogger(char* opName) {
+    printf("[OP] '%s'\n", opName);
+}
+
 extern "C" void callLogger(char* calleeName, char* callerName, long int valID) {
     printf("[CALL] '%s' -> '%s' {%ld}\n", calleeName, callerName, valID);
 }
