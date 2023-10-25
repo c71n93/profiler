@@ -83,5 +83,5 @@ static void registerMyPass(const PassManagerBuilder &,
     PM.add(new ProfilerPass());
 }
 static RegisterStandardPasses
-RegisterMyPass(PassManagerBuilder::EP_EarlyAsPossible,
+RegisterMyPass(PassManagerBuilder::EP_OptimizerLast,
                registerMyPass);
