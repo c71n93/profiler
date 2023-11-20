@@ -3,18 +3,62 @@ project(profiler LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 
 find_package(LLVM CONFIG)
-message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
-message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+
+if (NOT DEFINED SOURCE)
+    message(FATAL_ERROR "Path to profiled source should be specified")
+endif()
+
 if(LLVM_FOUND)
     add_library(profiler SHARED src/prof-pass.cpp)
     target_include_directories(profiler PUBLIC ${LLVM_INCLUDE_DIRS})
-    target_sources(profiler PRIVATE
-            src/prof-functions/log.cpp
-    )
     target_link_libraries(profiler PRIVATE LLVM)
-
-    add_custom_target(run_profiler
-            COMMENT "Instrumenting ${SOURCE}"
-            COMMAND clang -Xclang -load -Xclang $<TARGET_FILE_DIR:profiler>/$<TARGET_FILE_NAME:profiler> ${SOURCE} ${CMAKE_SOURCE_DIR}/src/prof-functions/log.cpp -o run_profiler
-    )
+else()
+    message(FATAL_ERROR "LLVM not found")
 endif()
+
+set(LOGGER_SOURCE_PATH ${CMAKE_SOURCE_DIR}/src/prof-functions/log.cpp)
+
+function(run_profiler_single_source FILE_NAME)
+    add_custom_target(run_profiler
+            COMMAND clang -O2 -Xclang -load -Xclang $<TARGET_FILE_DIR:profiler>/$<TARGET_FILE_NAME:profiler> ${FILE_NAME} ${LOGGER_SOURCE_PATH} -o run_profiler
+            COMMENT "Instrumenting ${FILE_NAME}"
+    )
+    add_dependencies(run_profiler profiler)
+endfunction()
+
+#function(profile_single_source FILE_NAME)
+#    set(OUTPUT_DIR ${CMAKE_SOURCE_DIR}/out)
+#    set(OUT_EXECUTABLE ${OUTPUT_DIR}/instrumented)
+#    set(OUT_LOG ${OUTPUT_DIR}/profile.log)
+#    add_custom_command(
+#            OUTPUT ${OUTPUT_DIR}
+#            COMMAND mkdir -p ${OUTPUT_DIR}
+#            COMMENT "Creating output directory"
+#    )
+#    add_custom_command(
+#            OUTPUT ${OUT_EXECUTABLE}
+#            COMMAND clang -O2 -Xclang -load -Xclang $<TARGET_FILE_DIR:profiler>/$<TARGET_FILE_NAME:profiler> ${FILE_NAME} ${LOGGER_SOURCE_PATH} -o ${OUT_EXECUTABLE}
+#            COMMENT "Instrumenting ${FILE_NAME}"
+#    )
+#
+#    add_custom_command(
+#            OUTPUT ${OUT_LOG}
+#            DEPENDS ${OUT_EXECUTABLE}
+#            COMMAND ./${OUT_EXECUTABLE} 5 > ${OUT_LOG}
+#            COMMENT "Instrumenting ${FILE_NAME}"
+#    )
+#endfunction()
+
+function(obtain_instrumented_object IN_SOURCE_PATH OUT_OBJECT_PATH)
+    add_custom_command(
+            OUTPUT ${OUT_OBJECT_PATH}
+            COMMAND clang -O2 -Xclang -load -Xclang $<TARGET_FILE_DIR:profiler>/$<TARGET_FILE_NAME:profiler> ${IN_SOURCE_PATH} ${LOGGER_SOURCE_PATH} -c ${OUT_OBJECT_PATH}
+            COMMENT "Instrumenting ${IN_SOURCE_PATH}"
+    )
+endfunction()
+
+function(profile_instrumented_executable EXECUTABLE)
+    message(STATUS "not implemented yet")
+endfunction()
+
+run_profiler_single_source(${SOURCE})

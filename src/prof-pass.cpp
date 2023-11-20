@@ -82,6 +82,7 @@ static void registerMyPass(const PassManagerBuilder &,
                            legacy::PassManagerBase &PM) {
     PM.add(new ProfilerPass());
 }
+
 static RegisterStandardPasses
 RegisterMyPass(PassManagerBuilder::EP_OptimizerLast,
                registerMyPass);
