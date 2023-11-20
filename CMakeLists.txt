@@ -5,7 +5,8 @@ set(CMAKE_CXX_STANDARD 20)
 find_package(LLVM CONFIG)
 
 if (NOT DEFINED SOURCE)
-    message(FATAL_ERROR "Path to profiled source should be specified")
+    message(STATUS "Path wasn't specified, using default")
+    set(SOURCE resources/fact.c)
 endif()
 
 if(LLVM_FOUND)
