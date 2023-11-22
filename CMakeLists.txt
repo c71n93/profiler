@@ -21,7 +21,7 @@ set(LOGGER_SOURCE_PATH ${CMAKE_SOURCE_DIR}/src/prof-functions/log.cpp)
 
 function(run_profiler_single_source FILE_NAME)
     add_custom_target(run_profiler
-            COMMAND clang -O2 -Xclang -load -Xclang $<TARGET_FILE_DIR:profiler>/$<TARGET_FILE_NAME:profiler> ${FILE_NAME} ${LOGGER_SOURCE_PATH} -o run_profiler
+            COMMAND clang -O2 -Xclang -load -Xclang $<TARGET_FILE_DIR:profiler>/$<TARGET_FILE_NAME:profiler> ${FILE_NAME} ${LOGGER_SOURCE_PATH} -flegacy-pass-manager -o run_profiler
             COMMENT "Instrumenting ${FILE_NAME}"
     )
     add_dependencies(run_profiler profiler)
@@ -38,7 +38,7 @@ endfunction()
 #    )
 #    add_custom_command(
 #            OUTPUT ${OUT_EXECUTABLE}
-#            COMMAND clang -O2 -Xclang -load -Xclang $<TARGET_FILE_DIR:profiler>/$<TARGET_FILE_NAME:profiler> ${FILE_NAME} ${LOGGER_SOURCE_PATH} -o ${OUT_EXECUTABLE}
+#            COMMAND clang -O2 -Xclang -load -Xclang $<TARGET_FILE_DIR:profiler>/$<TARGET_FILE_NAME:profiler> ${FILE_NAME} ${LOGGER_SOURCE_PATH} -flegacy-pass-manager -o ${OUT_EXECUTABLE}
 #            COMMENT "Instrumenting ${FILE_NAME}"
 #    )
 #
@@ -53,7 +53,7 @@ endfunction()
 function(obtain_instrumented_object IN_SOURCE_PATH OUT_OBJECT_PATH)
     add_custom_command(
             OUTPUT ${OUT_OBJECT_PATH}
-            COMMAND clang -O2 -Xclang -load -Xclang $<TARGET_FILE_DIR:profiler>/$<TARGET_FILE_NAME:profiler> ${IN_SOURCE_PATH} ${LOGGER_SOURCE_PATH} -c ${OUT_OBJECT_PATH}
+            COMMAND clang -O2 -Xclang -load -Xclang $<TARGET_FILE_DIR:profiler>/$<TARGET_FILE_NAME:profiler> ${IN_SOURCE_PATH} ${LOGGER_SOURCE_PATH} -flegacy-pass-manager -c ${OUT_OBJECT_PATH}
             COMMENT "Instrumenting ${IN_SOURCE_PATH}"
     )
 endfunction()
